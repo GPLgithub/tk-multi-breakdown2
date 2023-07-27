@@ -16,6 +16,33 @@ HookBaseClass = sgtk.get_hook_baseclass()
 class GetPublishedFiles(HookBaseClass):
     """"""
 
+    def get_published_files_from_scene_objects(self, scene_objects, fields):
+        """
+        Return the Published Files for the given scene objects.
+
+        Scene objects are dictionaries with the following expected keys:
+        - "node_name": The name of the 'node' that is to be operated on. Most DCCs have
+          a concept of a node, path or some other way to address a particular
+          object in the scene.
+        - "node_type": The object type that this is. This is later passed to the
+          update method so that it knows how to handle the object.
+        - "path": Path on disk to the referenced object.
+        - "extra_data": Optional key to pass some extra data to the update method
+          in case we'd like to access them when updating the nodes.
+
+        :param scene_object: A list of dictionaries as returned by the scene scanner.
+        :param fields: A list of fields to query from SG.
+        :returns: A dictionary where keys are file paths and values SG Published Files
+                  dictionaries.
+        """
+        if not scene_objects:
+            return {}
+        file_paths = [o["path"] for o in scene_objects]
+        return sgtk.util.find_publish(
+            self.sgtk, file_paths, fields=fields, only_current_project=False
+        )
+
+
     def get_published_files_for_items(self, items, data_retriever=None):
         """
         Make an API request to get all published files for the given file items.

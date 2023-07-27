@@ -59,8 +59,25 @@ class BreakdownManager(object):
         return self._bundle.execute_hook_method("hook_scene_operations", "scan_scene")
 
     @sgtk.LogManager.log_timing
+    def get_published_files_from_scene_objects(
+        self, scene_objects, extra_fields=None
+    ):
+        self._bundle.logger.info("Validating %s" % scene_objects)
+        # Get the published file fields to pass to the query
+        fields = self.get_published_file_fields()
+        if extra_fields is not None:
+            fields += extra_fields
+
+        return self._bundle.execute_hook_method(
+            "hook_get_published_files",
+            "get_published_files_from_scene_objects",
+            scene_objects=scene_objects,
+            fields=fields,
+        )
+
+    @sgtk.LogManager.log_timing
     def get_published_files_from_file_paths(
-        self, file_paths, extra_fields=None, bg_task_manager=None
+        self, file_paths, extra_fields=None
     ):
         """
         Query the ShotGrid API to get the published files for the given file paths.
@@ -70,34 +87,19 @@ class BreakdownManager(object):
         :param extra_fields: A list of ShotGrid fields to append to the ShotGrid query
                              when retreiving the published files.
         :type extra_fields: List[str]
-        :param bg_task_manager: (optional) A background task manager to execute the request
-            async. If not provided, the request will be executed synchronously.
-        :type: BackgroundTaskManager
 
-        :return: The task id for the request is returned if executed async, else the published
-            files data is returned if executed synchronosly.
-        :rtype: int | dict
+        :return: The published files data.
+        :rtype: dict
         """
 
         if not file_paths:
-            return None if bg_task_manager else {}
+            return {}
 
         # Get the published file fields to pass to the query
         fields = self.get_published_file_fields()
         if extra_fields is not None:
             fields += extra_fields
 
-        # Option to run this in a background task since this can take some time to execute.
-        if bg_task_manager:
-            # Execute the request async and return the task id for the operation.
-            return bg_task_manager.add_task(
-                sgtk.util.find_publish,
-                task_args=[self._bundle.sgtk, file_paths],
-                task_kwargs={"fields": fields, "only_current_project": False},
-            )
-
-        # No background task manager provided, execute the request synchronously and return
-        # the published files data immediately.
         return sgtk.util.find_publish(
             self._bundle.sgtk, file_paths, fields=fields, only_current_project=False
         )

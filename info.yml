@@ -23,7 +23,7 @@ configuration:
     hook_get_published_files:
         type: hook
         default_value: "{self}/get_published_files.py"
-        description: Specificy a hook that, if desired, defines how Pubilshed File entites are retrieved
+        description: Specificy a hook that, if desired, defines how Published File entities are retrieved
                      from the ShotGrid API.
 
     hook_ui_config:

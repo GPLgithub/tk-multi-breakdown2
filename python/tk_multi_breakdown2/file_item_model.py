@@ -774,17 +774,17 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             # This will omit any objects from the scene that do not have a ShotGrid Published
             # File. Some files can come from other projects so we cannot rely on templates,
             # and instead need to query ShotGrid.
-            file_paths = [o["path"] for o in self.__scene_objects]
             self.__pending_published_file_data_request = (
-                self._manager.get_published_files_from_file_paths(
-                    file_paths,
-                    extra_fields=self._published_file_fields,
-                    bg_task_manager=self._bg_task_manager,
+                self._bg_task_manager.add_task(
+                    self._manager.get_published_files_from_scene_objects,
+                    task_args=[self.__scene_objects],
+                    task_kwargs={"extra_fields": self._published_file_fields},
                 )
             )
-        except:
+        except Exception as e:
             # Reset on failure to reload
             self.__pending_published_file_data_request = None
+            self._app.logger.exception(e)
         finally:
             # Restore block siganls state, but do not emit endResetModel signal yet, this will
             # be done when the background tasks have completed to load the model data.
@@ -850,13 +850,14 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :return: True if the item was added successfully, else False.
         :rtype: bool
         """
+        self._app.logger.error("Adding %s" % file_item_data)
 
         if self.__is_reloading:
             return
 
         # Query for the published file for the new file item and create the FileItem object.
-        published_files = self._manager.get_published_files_from_file_paths(
-            [file_item_data["path"]],
+        published_files = self._manager.get_published_files_from_scene_objects(
+            [file_item_data],
             extra_fields=self._published_file_fields,
         )
 
@@ -1605,7 +1606,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :param msg: Short error message
         :param stack_trace: Full error traceback
         """
-
+        self._app.logger.error("%s: %s" % (msg, stack_trace))
         if uid == self.__pending_published_file_data_request:
             self.__pending_published_file_data_request = None
             self._finish_reload()
