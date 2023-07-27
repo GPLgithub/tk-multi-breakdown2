@@ -62,7 +62,18 @@ class BreakdownManager(object):
     def get_published_files_from_scene_objects(
         self, scene_objects, extra_fields=None
     ):
-        self._bundle.logger.info("Validating %s" % scene_objects)
+        """
+        Query the ShotGrid API to get the Published Files for the given scene objects.
+
+        :param scene_objects: A list of dictionaries as retrieved by scan scene.
+        :type scene_objects: List[dict]
+        :param extra_fields: A list of ShotGrid fields to append to the ShotGrid query
+                             when retreiving the published files.
+        :type extra_fields: List[str]
+
+        :return: The Published Files data.
+        :rtype: dict
+        """
         # Get the published file fields to pass to the query
         fields = self.get_published_file_fields()
         if extra_fields is not None:
