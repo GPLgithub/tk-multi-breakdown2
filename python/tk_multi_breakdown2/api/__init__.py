@@ -8,4 +8,4 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-from .manager import BreakdownManager, FileItem
+from .manager import BreakdownManager, FileItem  # noqa F401

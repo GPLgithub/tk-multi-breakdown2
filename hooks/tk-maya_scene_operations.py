@@ -104,7 +104,6 @@ class BreakdownSceneOperations(HookBaseClass):
             self.logger.debug(
                 "File Texture %s: Updating to version %s" % (node_name, path)
             )
-            file_name = cmds.getAttr("%s.fileTextureName" % node_name)
             cmds.setAttr("%s.fileTextureName" % node_name, path, type="string")
 
     def register_scene_change_callback(self, scene_change_callback):

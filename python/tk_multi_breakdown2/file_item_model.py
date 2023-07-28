@@ -8,15 +8,13 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-import copy
-
 import sgtk
 from sgtk import TankError
 from sgtk.platform.qt import QtGui, QtCore
 
 from tank_vendor import six
 
-from .ui import resources_rc  # Required for accessing icons
+from .ui import resources_rc  # noqa F401 Required for accessing icons
 from .utils import get_ui_published_file_fields
 from .decorators import wait_cursor
 
@@ -774,17 +772,17 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             # This will omit any objects from the scene that do not have a ShotGrid Published
             # File. Some files can come from other projects so we cannot rely on templates,
             # and instead need to query ShotGrid.
-            file_paths = [o["path"] for o in self.__scene_objects]
             self.__pending_published_file_data_request = (
-                self._manager.get_published_files_from_file_paths(
-                    file_paths,
-                    extra_fields=self._published_file_fields,
-                    bg_task_manager=self._bg_task_manager,
+                self._bg_task_manager.add_task(
+                    self._manager.get_published_files_for_items_data,
+                    task_args=[self.__scene_objects],
+                    task_kwargs={"extra_fields": self._published_file_fields},
                 )
             )
-        except:
+        except Exception as e:
             # Reset on failure to reload
             self.__pending_published_file_data_request = None
+            self._app.logger.exception(e)
         finally:
             # Restore block siganls state, but do not emit endResetModel signal yet, this will
             # be done when the background tasks have completed to load the model data.
@@ -850,18 +848,19 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :return: True if the item was added successfully, else False.
         :rtype: bool
         """
+        self._app.logger.error("Adding %s" % file_item_data)
 
         if self.__is_reloading:
             return
 
         # Query for the published file for the new file item and create the FileItem object.
-        published_files = self._manager.get_published_files_from_file_paths(
-            [file_item_data["path"]],
+        published_file_items = self._manager.get_published_files_for_items_data(
+            [file_item_data],
             extra_fields=self._published_file_fields,
         )
 
         # Get the FileItem object from the published file data
-        file_items = self._manager.get_file_items([file_item_data], published_files)
+        file_items = self._manager.get_file_items(published_file_items)
         if not file_items:
             return False
 
@@ -1413,7 +1412,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             group_by_id = "{type}.{id}".format(
                 type=data.get("type", "NoType"), id=data["id"]
             )
-        except:
+        except Exception:
             # Fall back to just using the data itself as the id
             group_by_id = str(data)
 
@@ -1585,7 +1584,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
 
             # Get the list of FileItem objects representing the objects in the scene
             self.__file_items = self._manager.get_file_items(
-                self.__scene_objects, result
+                result
             )
 
             # Make an async request to get all published file data necessary to determine the
@@ -1605,7 +1604,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :param msg: Short error message
         :param stack_trace: Full error traceback
         """
-
+        self._app.logger.error("%s: %s" % (msg, stack_trace))
         if uid == self.__pending_published_file_data_request:
             self.__pending_published_file_data_request = None
             self._finish_reload()

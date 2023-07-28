@@ -19,9 +19,9 @@ except ImportError:
     except ImportError:
         import __builtin__ as builtins
 
-builtins.vrNodeService = vrNodeService
-builtins.vrReferenceService = vrReferenceService
-builtins.vrFileIOService = vrFileIOService
+builtins.vrNodeService = vrNodeService  # noqa F821
+builtins.vrReferenceService = vrReferenceService  # noqa F821
+builtins.vrFileIOService = vrFileIOService  # noqa F821
 
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -64,10 +64,10 @@ class BreakdownSceneOperations(HookBaseClass):
 
         refs = []
 
-        for r in vrReferenceService.getSceneReferences():
+        for r in vrReferenceService.getSceneReferences():  # noqa F821
 
             # we only want to keep the top references
-            has_parent = vrReferenceService.getParentReferences(r)
+            has_parent = vrReferenceService.getParentReferences(r)  # noqa F821
             if has_parent:
                 continue
 
@@ -122,7 +122,7 @@ class BreakdownSceneOperations(HookBaseClass):
             ref_node.setName(new_node_name)
         elif node_type == "smart_reference":
             ref_node.setSmartPath(path)
-            vrReferenceService.reimportSmartReferences([ref_node])
+            vrReferenceService.reimportSmartReferences([ref_node])  # noqa F821
 
     def register_scene_change_callback(self, scene_change_callback):
         """
@@ -145,13 +145,13 @@ class BreakdownSceneOperations(HookBaseClass):
         # based on how the references have cahnged.
         # NOTE ideally the VRED API would have signals for specific reference change events,
         # until then, any reference change will trigger a full reload of the app.
-        vrReferenceService.referencesChanged.connect(self._on_references_changed_cb)
+        vrReferenceService.referencesChanged.connect(self._on_references_changed_cb)  # noqa F821
 
     def unregister_scene_change_callback(self):
         """Unregister the scene change callbacks by disconnecting any signals."""
 
         if self._on_references_changed_cb:
-            vrReferenceService.referencesChanged.disconnect(
+            vrReferenceService.referencesChanged.disconnect(  # noqa F821
                 self._on_references_changed_cb
             )
             self._on_references_changed_cb = None
@@ -164,7 +164,7 @@ def get_reference_by_id(ref_id):
     :param ref_name: Name of the reference we want to get the associated node from
     :returns: The reference node associated to the reference name
     """
-    ref_list = vrReferenceService.getSceneReferences()
+    ref_list = vrReferenceService.getSceneReferences()  # noqa F821
     for r in ref_list:
         if r.getObjectId() == ref_id:
             return r

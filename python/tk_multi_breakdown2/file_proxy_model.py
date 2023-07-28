@@ -9,7 +9,6 @@
 # not expressly granted therein are reserved by Autodesk, Inc.
 
 import sgtk
-from sgtk.platform.qt import QtGui, QtCore
 
 from .framework_qtwidgets import FilterItemTreeProxyModel
 

@@ -8,6 +8,8 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+import copy
+
 import sgtk
 
 from .item import FileItem
@@ -59,50 +61,34 @@ class BreakdownManager(object):
         return self._bundle.execute_hook_method("hook_scene_operations", "scan_scene")
 
     @sgtk.LogManager.log_timing
-    def get_published_files_from_file_paths(
-        self, file_paths, extra_fields=None, bg_task_manager=None
+    def get_published_files_for_items_data(
+        self, items_data, extra_fields=None
     ):
         """
-        Query the ShotGrid API to get the published files for the given file paths.
+        Query the ShotGrid API to get the Published Files for the given items data.
 
-        :param file_paths: A list of file paths to get the published files from.
-        :type file_paths: List[str]
+        :param items_data: A list of dictionaries as retrieved by scan scene.
+        :type items_data: List[dict]
         :param extra_fields: A list of ShotGrid fields to append to the ShotGrid query
                              when retreiving the published files.
         :type extra_fields: List[str]
-        :param bg_task_manager: (optional) A background task manager to execute the request
-            async. If not provided, the request will be executed synchronously.
-        :type: BackgroundTaskManager
 
-        :return: The task id for the request is returned if executed async, else the published
-            files data is returned if executed synchronosly.
-        :rtype: int | dict
+        :return: The Published Files data.
+        :rtype: dict
         """
-
-        if not file_paths:
-            return None if bg_task_manager else {}
-
         # Get the published file fields to pass to the query
         fields = self.get_published_file_fields()
         if extra_fields is not None:
             fields += extra_fields
 
-        # Option to run this in a background task since this can take some time to execute.
-        if bg_task_manager:
-            # Execute the request async and return the task id for the operation.
-            return bg_task_manager.add_task(
-                sgtk.util.find_publish,
-                task_args=[self._bundle.sgtk, file_paths],
-                task_kwargs={"fields": fields, "only_current_project": False},
-            )
-
-        # No background task manager provided, execute the request synchronously and return
-        # the published files data immediately.
-        return sgtk.util.find_publish(
-            self._bundle.sgtk, file_paths, fields=fields, only_current_project=False
+        return self._bundle.execute_hook_method(
+            "hook_get_published_files",
+            "get_published_files_for_items_data",
+            items_data=items_data,
+            fields=fields,
         )
 
-    def get_file_items(self, scene_objects, published_files):
+    def get_file_items(self, scene_objects):
         """
         Get the file item objects for the given scene objects.
 
@@ -119,15 +105,12 @@ class BreakdownManager(object):
                 The reference file path.
             extra_data (dict)
                 Extra data for the reference (optional).
+            sg_data (dict)
+                A dictionary for the Published File retrieved from ShotGrid.
 
         :param scene_objects: Objects from the DCC. This value can be the result returned by
             the `scan_scene` method.
         :type scene_objects: dict
-        :param published_files: The list of published files corresponding to the
-            `scene_objects`. Any scene objects that do not have a matching published will be
-            omitted from the result (there will not be a FileItem object created for it). This
-            can be the result returned by the `sgtk.util.find_publish` method.
-        :type publishehd_files: List[dict]
 
         :return: A list of FileItem objects representing the scene objects.
         :rtype: List[FileItem]
@@ -136,10 +119,11 @@ class BreakdownManager(object):
         file_items = []
 
         for obj in scene_objects:
-            if obj["path"] in published_files:
+            if obj.get("sg_data"):
                 file_item = FileItem(obj["node_name"], obj["node_type"], obj["path"])
                 file_item.extra_data = obj.get("extra_data")
-                file_item.sg_data = published_files[obj["path"]]
+                # Make a shallow copy in case it is shared between multiple items.
+                file_item.sg_data = copy.copy(obj["sg_data"])
                 file_items.append(file_item)
 
         return file_items

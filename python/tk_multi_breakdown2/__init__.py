@@ -8,12 +8,12 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-from .api import BreakdownManager
+from .api import BreakdownManager  # noqa F401
 
 try:
     # Attempt to import the AppDialog
     from .dialog import AppDialog
-except:
+except Exception:
     # Ignore import error for AppDialog so that the app works gracefully in batch modes
     pass
 

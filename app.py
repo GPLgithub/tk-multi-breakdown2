@@ -114,7 +114,7 @@ class SceneBreakdown2(sgtk.platform.Application):
                 log_once=False,
                 bundle=self,
             )
-        except:
+        except Exception:
             # Ignore all errors, e.g. using a core that does not support metrics.
             pass
 

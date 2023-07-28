@@ -8,7 +8,6 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-import datetime
 import os
 import pytest
 
@@ -140,7 +139,7 @@ class TestApplication(AppTestBase):
                         )
                     )
 
-                except Exception as error:
+                except Exception:
                     # Hook executed but had an exception. This is OK since this is just a test of existence.
                     pass
 

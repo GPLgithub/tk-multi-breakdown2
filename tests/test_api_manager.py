@@ -25,7 +25,6 @@ base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "python
 app_dir = os.path.abspath(os.path.join(base_dir, "tk_multi_breakdown2"))
 api_dir = os.path.abspath(os.path.join(app_dir, "api"))
 sys.path.extend([base_dir, app_dir, api_dir])
-from tk_multi_breakdown2 import constants
 from tk_multi_breakdown2.api import BreakdownManager
 from tk_multi_breakdown2.api.item import FileItem
 
