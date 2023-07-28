@@ -8,4 +8,4 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-from . import tk_multi_breakdown2
+from . import tk_multi_breakdown2  # noqa F401

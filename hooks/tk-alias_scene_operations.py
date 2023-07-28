@@ -122,7 +122,7 @@ class BreakdownSceneOperations(HookBaseClass):
         try:
             api_alias_version = alias_api.__alias_version__
             major_version = int(api_alias_version.split(".")[0])
-        except:
+        except Exception:
             major_version = -1
 
         if major_version >= 2023:

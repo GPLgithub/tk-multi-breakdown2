@@ -10,16 +10,15 @@
 
 import sgtk
 from sgtk.platform.qt import QtGui, QtCore
-from tank.errors import TankHookMethodDoesNotExistError
 from tank_vendor import six
 
 from .ui.dialog import Ui_Dialog
-from .ui import resources_rc  # Required for accessing icons
+from .ui import resources_rc  # noqa F401 Required for accessing icons
 
 from .file_item_model import FileTreeItemModel as FileModel
 from .file_history_model import FileHistoryModel
 from .actions import ActionManager
-from .framework_qtwidgets import (
+from .framework_qtwidgets import (  # noqa F401
     FilterItem,
     FilterMenu,
     FilterMenuButton,  # Keep this import even if the linter says its unused

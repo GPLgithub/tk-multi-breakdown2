@@ -44,6 +44,7 @@ exclude =
     python/tank/authentication/ui/login_dialog.py,
     python/tank/authentication/ui/resources_rc.py,
     python/tank/authentication/sso_saml2/*,
+    python/tk_multi_breakdown2/ui,
     tests/python
 
 # toolkit exceptions

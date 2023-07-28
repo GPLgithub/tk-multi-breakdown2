@@ -8,15 +8,13 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
-import copy
-
 import sgtk
 from sgtk import TankError
 from sgtk.platform.qt import QtGui, QtCore
 
 from tank_vendor import six
 
-from .ui import resources_rc  # Required for accessing icons
+from .ui import resources_rc  # noqa F401 Required for accessing icons
 from .utils import get_ui_published_file_fields
 from .decorators import wait_cursor
 
@@ -1414,7 +1412,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             group_by_id = "{type}.{id}".format(
                 type=data.get("type", "NoType"), id=data["id"]
             )
-        except:
+        except Exception:
             # Fall back to just using the data itself as the id
             group_by_id = str(data)
 
