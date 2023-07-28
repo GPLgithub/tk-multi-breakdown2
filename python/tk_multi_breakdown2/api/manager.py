@@ -8,6 +8,8 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+import copy
+
 import sgtk
 
 from .item import FileItem
@@ -59,7 +61,7 @@ class BreakdownManager(object):
         return self._bundle.execute_hook_method("hook_scene_operations", "scan_scene")
 
     @sgtk.LogManager.log_timing
-    def get_published_files_from_scene_objects(
+    def get_published_files_for_scene_objects(
         self, scene_objects, extra_fields=None
     ):
         """
@@ -81,41 +83,12 @@ class BreakdownManager(object):
 
         return self._bundle.execute_hook_method(
             "hook_get_published_files",
-            "get_published_files_from_scene_objects",
+            "get_published_files_for_scene_objects",
             scene_objects=scene_objects,
             fields=fields,
         )
 
-    @sgtk.LogManager.log_timing
-    def get_published_files_from_file_paths(
-        self, file_paths, extra_fields=None
-    ):
-        """
-        Query the ShotGrid API to get the published files for the given file paths.
-
-        :param file_paths: A list of file paths to get the published files from.
-        :type file_paths: List[str]
-        :param extra_fields: A list of ShotGrid fields to append to the ShotGrid query
-                             when retreiving the published files.
-        :type extra_fields: List[str]
-
-        :return: The published files data.
-        :rtype: dict
-        """
-
-        if not file_paths:
-            return {}
-
-        # Get the published file fields to pass to the query
-        fields = self.get_published_file_fields()
-        if extra_fields is not None:
-            fields += extra_fields
-
-        return sgtk.util.find_publish(
-            self._bundle.sgtk, file_paths, fields=fields, only_current_project=False
-        )
-
-    def get_file_items(self, scene_objects, published_files):
+    def get_file_items(self, scene_objects):
         """
         Get the file item objects for the given scene objects.
 
@@ -132,15 +105,12 @@ class BreakdownManager(object):
                 The reference file path.
             extra_data (dict)
                 Extra data for the reference (optional).
+            sg_data (dict)
+                A dictionary for the Published File retrieved from ShotGrid.
 
         :param scene_objects: Objects from the DCC. This value can be the result returned by
             the `scan_scene` method.
         :type scene_objects: dict
-        :param published_files: The list of published files corresponding to the
-            `scene_objects`. Any scene objects that do not have a matching published will be
-            omitted from the result (there will not be a FileItem object created for it). This
-            can be the result returned by the `sgtk.util.find_publish` method.
-        :type publishehd_files: List[dict]
 
         :return: A list of FileItem objects representing the scene objects.
         :rtype: List[FileItem]
@@ -149,10 +119,11 @@ class BreakdownManager(object):
         file_items = []
 
         for obj in scene_objects:
-            if obj["path"] in published_files:
+            if obj.get("sg_data"):
                 file_item = FileItem(obj["node_name"], obj["node_type"], obj["path"])
                 file_item.extra_data = obj.get("extra_data")
-                file_item.sg_data = published_files[obj["path"]]
+                # Make a shallow copy in case it is shared between multiple items.
+                file_item.sg_data = copy.copy(obj["sg_data"])
                 file_items.append(file_item)
 
         return file_items

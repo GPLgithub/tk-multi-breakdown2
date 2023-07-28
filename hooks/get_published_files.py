@@ -8,6 +8,7 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+import copy
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -16,7 +17,7 @@ HookBaseClass = sgtk.get_hook_baseclass()
 class GetPublishedFiles(HookBaseClass):
     """"""
 
-    def get_published_files_from_scene_objects(self, scene_objects, fields):
+    def get_published_files_for_scene_objects(self, scene_objects, fields):
         """
         Return the Published Files for the given scene objects.
 
@@ -30,18 +31,29 @@ class GetPublishedFiles(HookBaseClass):
         - "extra_data": Optional key to pass some extra data to the update method
           in case we'd like to access them when updating the nodes.
 
+        Scene objects dictionaries for which a Published File was found are updated
+        with a `sg_data` key with the found Published File dictionary, allowing
+        custom implementations to have full control on how scene objects are mapped
+        to Published Files.
+
+        This implementation is based on scene object paths matching Published File paths.
+
         :param scene_object: A list of dictionaries as returned by the scene scanner.
         :param fields: A list of fields to query from SG.
-        :returns: A dictionary where keys are file paths and values SG Published Files
-                  dictionaries.
+        :returns: A list of scene objects for which a Published File was found.
         """
         if not scene_objects:
-            return {}
+            return []
         file_paths = [o["path"] for o in scene_objects]
-        return sgtk.util.find_publish(
+        publishes = sgtk.util.find_publish(
             self.sgtk, file_paths, fields=fields, only_current_project=False
         )
-
+        published_scene_objects = []
+        for scene_object in scene_objects:
+            if scene_object["path"] in publishes:
+                scene_object["sg_data"] = publishes[scene_object["path"]]
+                published_scene_objects.append(scene_object)
+        return published_scene_objects
 
     def get_published_files_for_items(self, items, data_retriever=None):
         """
