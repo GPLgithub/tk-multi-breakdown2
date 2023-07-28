@@ -17,11 +17,11 @@ HookBaseClass = sgtk.get_hook_baseclass()
 class GetPublishedFiles(HookBaseClass):
     """"""
 
-    def get_published_files_for_scene_objects(self, scene_objects, fields):
+    def get_published_files_for_items_data(self, items_data, fields):
         """
-        Return the Published Files for the given scene objects.
+        Return the Published Files for the given items data.
 
-        Scene objects are dictionaries with the following expected keys:
+        Items data are dictionaries with the following expected keys:
         - "node_name": The name of the 'node' that is to be operated on. Most DCCs have
           a concept of a node, path or some other way to address a particular
           object in the scene.
@@ -31,29 +31,29 @@ class GetPublishedFiles(HookBaseClass):
         - "extra_data": Optional key to pass some extra data to the update method
           in case we'd like to access them when updating the nodes.
 
-        Scene objects dictionaries for which a Published File was found are updated
-        with a `sg_data` key with the found Published File dictionary, allowing
+        Items data dictionaries for which a Published File is found are updated
+        with a "sg_data" key with the found Published File dictionary, allowing
         custom implementations to have full control on how scene objects are mapped
         to Published Files.
 
-        This implementation is based on scene object paths matching Published File paths.
+        This implementation is based on items data paths matching Published File paths.
 
-        :param scene_object: A list of dictionaries as returned by the scene scanner.
+        :param items_data: A list of dictionaries as returned by the scene scanner.
         :param fields: A list of fields to query from SG.
-        :returns: A list of scene objects for which a Published File was found.
+        :returns: A list of items data for which a Published File was found.
         """
-        if not scene_objects:
+        if not items_data:
             return []
-        file_paths = [o["path"] for o in scene_objects]
+        file_paths = [o["path"] for o in items_data]
         publishes = sgtk.util.find_publish(
             self.sgtk, file_paths, fields=fields, only_current_project=False
         )
-        published_scene_objects = []
-        for scene_object in scene_objects:
-            if scene_object["path"] in publishes:
-                scene_object["sg_data"] = publishes[scene_object["path"]]
-                published_scene_objects.append(scene_object)
-        return published_scene_objects
+        published_items_data = []
+        for item_data in items_data:
+            if item_data["path"] in publishes:
+                item_data["sg_data"] = publishes[item_data["path"]]
+                published_items_data.append(item_data)
+        return published_items_data
 
     def get_published_files_for_items(self, items, data_retriever=None):
         """

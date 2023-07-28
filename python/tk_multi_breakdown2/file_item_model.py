@@ -776,7 +776,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             # and instead need to query ShotGrid.
             self.__pending_published_file_data_request = (
                 self._bg_task_manager.add_task(
-                    self._manager.get_published_files_for_scene_objects,
+                    self._manager.get_published_files_for_items_data,
                     task_args=[self.__scene_objects],
                     task_kwargs={"extra_fields": self._published_file_fields},
                 )
@@ -856,7 +856,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
             return
 
         # Query for the published file for the new file item and create the FileItem object.
-        published_file_items = self._manager.get_published_files_for_scene_objects(
+        published_file_items = self._manager.get_published_files_for_items_data(
             [file_item_data],
             extra_fields=self._published_file_fields,
         )

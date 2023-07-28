@@ -61,14 +61,14 @@ class BreakdownManager(object):
         return self._bundle.execute_hook_method("hook_scene_operations", "scan_scene")
 
     @sgtk.LogManager.log_timing
-    def get_published_files_for_scene_objects(
-        self, scene_objects, extra_fields=None
+    def get_published_files_for_items_data(
+        self, items_data, extra_fields=None
     ):
         """
-        Query the ShotGrid API to get the Published Files for the given scene objects.
+        Query the ShotGrid API to get the Published Files for the given items data.
 
-        :param scene_objects: A list of dictionaries as retrieved by scan scene.
-        :type scene_objects: List[dict]
+        :param items_data: A list of dictionaries as retrieved by scan scene.
+        :type items_data: List[dict]
         :param extra_fields: A list of ShotGrid fields to append to the ShotGrid query
                              when retreiving the published files.
         :type extra_fields: List[str]
@@ -83,8 +83,8 @@ class BreakdownManager(object):
 
         return self._bundle.execute_hook_method(
             "hook_get_published_files",
-            "get_published_files_for_scene_objects",
-            scene_objects=scene_objects,
+            "get_published_files_for_items_data",
+            items_data=items_data,
             fields=fields,
         )
 
