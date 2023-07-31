@@ -121,6 +121,7 @@ class BreakdownSceneOperations(HookBaseClass):
         node_name = item["node_name"]
         node_type = item["node_type"]
         extra_data = item["extra_data"]
+        sg_data = item["sg_data"]
         if not sg_data or not sg_data.get("path", {}).get("local_path", None):
             return False
         path = sg_data["path"]["local_path"].replace(os.path.sep, "/")
