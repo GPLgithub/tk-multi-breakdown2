@@ -68,33 +68,68 @@ class GetPublishedFiles(HookBaseClass):
             published file data result from the api request.
         :rtype: str | dict
         """
-
+        self.logger.debug("Retrieving Published files for items %s" % items)
         if not items:
             return {}
 
-        # Build the filters to get all published files for at once for all the file items.
+        # Build the filters to get all published files at once for all the file items.
         entities = []
         names = []
         tasks = []
         pf_types = []
         for file_item in items:
-            entities.append(file_item.sg_data["entity"])
+            if file_item.sg_data["task"]:
+                # If we have a Task, use it
+                tasks.append(file_item.sg_data["task"])
+            else:
+                # Otherwise match with the Entity and no task
+                entities.append(file_item.sg_data["entity"])
             names.append(file_item.sg_data["name"])
-            tasks.append(file_item.sg_data["task"])
             pf_types.append(file_item.sg_data["published_file_type"])
 
-        # Published files will be found by their entity, name, task and published file type.
+        # Published files will be found by their name, entity or task and published file type.
         filters = [
-            ["entity", "in", entities],
             ["name", "in", names],
-            ["task", "in", tasks],
             ["published_file_type", "in", pf_types],
         ]
+        if tasks:
+            if entities:
+                # Match Published files linked to the Tasks or linked to the Entities
+                # but with an empty Task
+                filters.append(
+                    {
+                        "filter_operator": "any",
+                        "filters": [
+                            ["task", "in", tasks],
+                            {
+                                "filter_operator": "all",
+                                "filters": [
+                                    ["entity", "in", entities],
+                                    ["task", "is", None]
+                                ]
+                            }
+                        ]
+                    }
+                )
+            else:
+                # Match against the list of Tasks
+                filters.append(["task", "in", tasks])
+        else:
+            # If we don't have tasks then we have entities
+            # Match against them with an empty Task
+            filters.extend([
+                ["entity", "in", entities],
+                ["task", "is", None]
+            ])
+        self.logger.debug("Retrieving published files with %s" % filters)
 
         # Get the query fields. This assumes all file items in the list have the same fields.
         fields = list(items[0].sg_data.keys()) + ["version_number", "path"]
-        order = [{"field_name": "version_number", "direction": "desc"}]
-
+        # Highest version first or latest one
+        order = [
+            {"field_name": "version_number", "direction": "desc"},
+            {"field_name": "created_at", "direction": "desc"}
+        ]
         if data_retriever:
             # Execute async and return the background task id.
             return data_retriever.execute_find(
@@ -128,13 +163,25 @@ class GetPublishedFiles(HookBaseClass):
         """
 
         filters = [
-            ["entity", "is", item.sg_data["entity"]],
             ["name", "is", item.sg_data["name"]],
-            ["task", "is", item.sg_data["task"]],
             ["published_file_type", "is", item.sg_data["published_file_type"]],
         ]
+        # If we have a Task, use it for the match, otherwise match the
+        # Entity with an empty Task
+        if item.sg_data["task"]:
+            filters.append(["task", "is", item.sg_data["task"]])
+        else:
+            filters.extend([
+                ["entity", "is", item.sg_data["entity"]],
+                ["task", "is", None]
+            ])
         fields = list(item.sg_data.keys()) + ["version_number", "path"]
-        order = [{"field_name": "version_number", "direction": "desc"}]
+        # Highest version first or latest one
+        order = [
+            {"field_name": "version_number", "direction": "desc"},
+            {"field_name": "created_at", "direction": "desc"}
+        ]
+        self.logger.debug("Retrieving published files with %s, %s" % (filters, fields))
 
         # todo: check if this work with url published files
         # todo: need to check for path comparison?

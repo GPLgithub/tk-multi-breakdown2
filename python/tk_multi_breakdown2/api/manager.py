@@ -171,6 +171,7 @@ class BreakdownManager(object):
 
         return result
 
+    @sgtk.LogManager.log_timing
     def get_published_files_for_items(self, items, data_retriever=None):
         """
         Get all published files for the given items.
