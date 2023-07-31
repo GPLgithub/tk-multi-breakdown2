@@ -275,30 +275,20 @@ class BreakdownManager(object):
         :rtype: bool
         """
 
-        if not sg_data or not sg_data.get("path", {}).get("local_path", None):
-            return False
-
         item_dict = item.to_dict()
-        item_dict["path"] = sg_data["path"]["local_path"]
-        if item_dict["extra_data"] is None:
-            item_dict["extra_data"] = {"old_path": item.path}
-        else:
-            item_dict["extra_data"]["old_path"] = item.path
+        item_dict["sg_data"] = sg_data
 
-        do_update = self._bundle.execute_hook_method(
+        new_path = self._bundle.execute_hook_method(
             "hook_scene_operations",
             "update",
             item=item_dict,
         )
-        if do_update is None:
-            # Default to True if the hook return value was not explictly set
-            do_update = True
 
-        if do_update:
-            # Only update the file item if specified. Updating the item will affect the data
+        if new_path:
+            # Only update the file item if an update was done. Updating the item will affect the data
             # model directly
             item.sg_data = sg_data
-            item.path = item_dict["path"]
+            item.path = new_path
             item.extra_data = item_dict["extra_data"]
 
-        return do_update
+        return bool(new_path)
