@@ -848,7 +848,6 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :return: True if the item was added successfully, else False.
         :rtype: bool
         """
-        self._app.logger.error("Adding %s" % file_item_data)
 
         if self.__is_reloading:
             return
