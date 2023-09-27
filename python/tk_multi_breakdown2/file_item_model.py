@@ -1270,11 +1270,14 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
 
     def _get_published_files_mapping(self, published_file_data):
         """
-        Return a mapping of published files by their entity, name, task and type.
+        Return a mapping of published files by their fields specified in app settings.
 
-        The published file data passed in is a list of published file data (dictionaries). A
-        mapping is created where the published files are indexed by their entity, name, task,
-        and published file type.
+        For example, if published_file_matching_fields is set to ["project", "entity", "task", "name"],
+        then the returned dictionary will be a nested dictionary mapping published files by their
+        project, entity, task, and name.
+
+        For each level, if the value is a dictionary, then the dictionary will be mapped by the
+        dictionary's "id" value, else the value will be used as the key.
 
         :param published_file_data: The list of published file data to map.
         :type published_file_data: List[dict]
@@ -1282,36 +1285,26 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :return: The dictionary mapping for published files.
         :rtype: dict
         """
-
+        pub_matching_fields = self._app.get_setting("published_file_matching_fields")
         published_files_mapping = {}
 
         for pf_data in published_file_data:
-            name = pf_data.get("name")
+            current_level = published_files_mapping
 
-            if not pf_data.get("entity"):
-                entity_id = None
-                entity_type = None
-            else:
-                entity_id = pf_data["entity"]["id"]
-                entity_type = pf_data["entity"]["type"]
+            # Iterate over fields and navigate or create nested dictionary structure.
+            for index, field in enumerate(pub_matching_fields):
+                field_value = pf_data.get(field)
+                if isinstance(field_value, dict):
+                    field_value = field_value.get("id")
 
-            if not pf_data.get("task"):
-                task_id = None
-            else:
-                task_id = pf_data["task"]["id"]
-
-            if not pf_data.get("published_file_type"):
-                pf_type_id = None
-            else:
-                pf_type_id = pf_data["published_file_type"]["id"]
-
-            published_files_mapping.setdefault(entity_type, {}).setdefault(
-                entity_id, {}
-            ).setdefault(task_id, {}).setdefault(pf_type_id, {}).setdefault(
-                name, []
-            ).append(
-                pf_data
-            )
+                # If it's last field in the loop, ensure the current_level for
+                # that key is a list and append to it.
+                if index == len(pub_matching_fields) - 1:
+                    current_level.setdefault(field_value, []).append(pf_data)
+                else:
+                    current_level.setdefault(field_value, {})
+                    # Navigate deeper into the dictionary.
+                    current_level = current_level[field_value]
 
         return published_files_mapping
 
@@ -1322,43 +1315,34 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :param file_item: The file item to get the latest published file for.
         :type file_item: FileItem
         :param published_files_mapping: A dictionary mapping a list of published files by
-            their entity, task, published file type, and name which is used to determine
-            the latest published file for the given item. This param is expected to be the
-            result returned by the method `_get_published_files_mapping`.
+            fields specified in app settings which is used to determine the latest published
+            file for the given item. This param is expected to be the result returned by the
+            method `_get_published_files_mapping`.
         :type published_files_mapping: dict
 
         :return: The latest published file.
         :rtype: dict
         """
 
-        name = file_item.sg_data.get("name")
+        pub_matching_fields = self._app.get_setting("published_file_matching_fields")
+        current_level = published_files_mapping
 
-        if not file_item.sg_data.get("entity"):
-            entity_id = None
-            entity_type = None
-        else:
-            entity_id = file_item.sg_data["entity"]["id"]
-            entity_type = file_item.sg_data["entity"]["type"]
+        # Iterate over fields and navigate the nested dictionary structure.
+        for field in pub_matching_fields:
+            field_value = file_item.sg_data.get(field)
+            if isinstance(field_value, dict):
+                field_value = field_value.get("id")
+            # Navigate deeper into the dictionary.
+            if field_value in current_level:
+                current_level = current_level[field_value]
+            else:
+                # If the key doesn't exist, there's no Published File for this item with the
+                # given fields, so return None.
+                return None
 
-        if not file_item.sg_data.get("task"):
-            task_id = None
-        else:
-            task_id = file_item.sg_data["task"]["id"]
-
-        if not file_item.sg_data.get("published_file_type"):
-            pf_type_id = None
-        else:
-            pf_type_id = file_item.sg_data["published_file_type"]["id"]
-
-        # Look up the published files for this item by the entity, task, published file type,
-        # and name
-        publish_files = published_files_mapping[entity_type][entity_id][task_id][
-            pf_type_id
-        ][name]
-
-        # The published files are assumed to be in order of highest to lowest by version
+        # The Published Files are assumed to be in order of highest to lowest by version
         # number. Thus the latest, is the first item in the list.
-        return publish_files[0]
+        return current_level[0] if current_level else None
 
     def _request_thumbnail(self, model_item, file_item):
         """

@@ -41,6 +41,18 @@ configuration:
         default_value: 5
         description: Number of versions to display in the file history information window.
 
+    published_file_matching_fields:
+        type: list
+        description: The Published File fields to use when looking for the publish history. They are
+                     used to match the current Published File data against other Published Files. By default,
+                     the app will look for Published Files with the same project, task, entity, name and
+                     published file type.
+        values:
+            type: str
+        allows_empty: False
+        default_value:
+          [ "project", "task", "entity", "name", "published_file_type" ]
+
     published_file_fields:
         type: list
         values: {type: str}
