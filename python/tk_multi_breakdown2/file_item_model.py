@@ -1270,14 +1270,14 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
 
     def _get_published_files_mapping(self, published_file_data):
         """
-        Return a mapping of published files by their fields specified in app settings.
+        Return a mapping of Published Files by their fields specified in app settings.
 
-        For example, if published_file_matching_fields is set to ["project", "entity", "task", "name"],
+        For example, if publish_history_group_by_fields is set to ["project", "entity", "task", "name"],
         then the returned dictionary will be a nested dictionary mapping published files by their
         project, entity, task, and name.
 
         For each level, if the value is a dictionary, then the dictionary will be mapped by the
-        dictionary's "id" value, else the value will be used as the key.
+        dictionary's "type" and "id" values, else the value will be used as the key.
 
         :param published_file_data: The list of published file data to map.
         :type published_file_data: List[dict]
@@ -1285,21 +1285,21 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :return: The dictionary mapping for published files.
         :rtype: dict
         """
-        pub_matching_fields = self._app.get_setting("published_file_matching_fields")
+        group_by_fields = self._app.get_setting("publish_history_group_by_fields")
         published_files_mapping = {}
 
         for pf_data in published_file_data:
             current_level = published_files_mapping
 
             # Iterate over fields and navigate or create nested dictionary structure.
-            for index, field in enumerate(pub_matching_fields):
+            for index, field in enumerate(group_by_fields):
                 field_value = pf_data.get(field)
                 if isinstance(field_value, dict):
-                    field_value = field_value.get("id")
+                    field_value = (field_value.get("type"), field_value.get("id"))
 
                 # If it's last field in the loop, ensure the current_level for
                 # that key is a list and append to it.
-                if index == len(pub_matching_fields) - 1:
+                if index == len(group_by_fields) - 1:
                     current_level.setdefault(field_value, []).append(pf_data)
                 else:
                     current_level.setdefault(field_value, {})
@@ -1324,14 +1324,14 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         :rtype: dict
         """
 
-        pub_matching_fields = self._app.get_setting("published_file_matching_fields")
+        group_by_fields = self._app.get_setting("publish_history_group_by_fields")
         current_level = published_files_mapping
 
         # Iterate over fields and navigate the nested dictionary structure.
-        for field in pub_matching_fields:
+        for field in group_by_fields:
             field_value = file_item.sg_data.get(field)
             if isinstance(field_value, dict):
-                field_value = field_value.get("id")
+                field_value = (field_value.get("type"), field_value.get("id"))
             # Navigate deeper into the dictionary.
             if field_value in current_level:
                 current_level = current_level[field_value]

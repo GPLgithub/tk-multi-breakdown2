@@ -8,13 +8,16 @@
 # agreement to the Shotgun Pipeline Toolkit Source Code License. All rights
 # not expressly granted therein are reserved by Autodesk, Inc.
 
+from collections import defaultdict
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
 
 
 class GetPublishedFiles(HookBaseClass):
-    """"""
+    """
+    Hook called to retrieve the Published Files for the items in the scene.
+    """
 
     def get_published_files_for_items_data(self, items_data, fields):
         """
@@ -58,73 +61,47 @@ class GetPublishedFiles(HookBaseClass):
         """
         Make an API request to get all published files for the given file items.
 
-        :param items: a list of :class`FileItem` we want to get published files for.
-        :type items: List[FileItem]
-        :param data_retreiver: If provided, the api request will be async. The default value
-            will execute the api request synchronously.
-        :type data_retriever: ShotgunDataRetriever
+        Use the publish_history_group_by_fields setting to build the filters to get all
+        published files at once for all the file items.
 
-        :return: If the request is async, then the request task id is returned, else the
+        For example, if the publish_history_group_by_fields setting is set to
+        ["project", "entity", "task", "name", "published_file_type"]
+        then it will look for all file items which have matching values for all these fields.
+
+        :param items: a list of :class`FileItem` we want to get published files for.
+        :param data_retriever: If provided, the api request will be async. The default value
+            will execute the api request synchronously.
+
+        :returns: If the request is async, then the request task id is returned, else the
             published file data result from the api request.
-        :rtype: str | dict
         """
         self.logger.debug("Retrieving Published files for items %s" % items)
         if not items:
             return {}
 
         # Build the filters to get all published files at once for all the file items.
-        entities = []
-        names = []
-        tasks = []
-        pf_types = []
+        group_by_fields = self.parent.get_setting("publish_history_group_by_fields")
+        sg_data_by_field = defaultdict(list)
         for file_item in items:
-            if file_item.sg_data["task"]:
-                # If we have a Task, use it
-                tasks.append(file_item.sg_data["task"])
+            for field in group_by_fields:
+                if file_item.sg_data.get(field):
+                    sg_data_by_field[field].append(
+                        file_item.sg_data[field]
+                    )
+                else:
+                    # If there's no data for this field, we still need to make sure
+                    # there's an empty list for it to build the filters.
+                    sg_data_by_field[field] = []
+        filters = []
+        for field, values in sg_data_by_field.items():
+            if values:
+                filters.append([field, "in", values])
             else:
-                # Otherwise match with the Entity and no task
-                entities.append(file_item.sg_data["entity"])
-            names.append(file_item.sg_data["name"])
-            pf_types.append(file_item.sg_data["published_file_type"])
-
-        # Published files will be found by their name, entity or task and published file type.
-        filters = [
-            ["name", "in", names],
-            ["published_file_type", "in", pf_types],
-        ]
-        if tasks:
-            if entities:
-                # Match Published files linked to the Tasks or linked to the Entities
-                # but with an empty Task
-                filters.append(
-                    {
-                        "filter_operator": "any",
-                        "filters": [
-                            ["task", "in", tasks],
-                            {
-                                "filter_operator": "all",
-                                "filters": [
-                                    ["entity", "in", entities],
-                                    ["task", "is", None]
-                                ]
-                            }
-                        ]
-                    }
-                )
-            else:
-                # Match against the list of Tasks
-                filters.append(["task", "in", tasks])
-        else:
-            # If we don't have tasks then we have entities
-            # Match against them with an empty Task
-            filters.extend([
-                ["entity", "in", entities],
-                ["task", "is", None]
-            ])
-        self.logger.debug("Retrieving published files with %s" % filters)
+                filters.append([field, "is", None])
 
         # Get the query fields. This assumes all file items in the list have the same fields.
         fields = list(items[0].sg_data.keys()) + ["version_number", "path"]
+        self.logger.debug("Retrieving published files with %s, %s" % (filters, fields))
         # Highest version first or latest one
         order = [
             {"field_name": "version_number", "direction": "desc"},
@@ -132,49 +109,45 @@ class GetPublishedFiles(HookBaseClass):
         ]
         if data_retriever:
             # Execute async and return the background task id.
-            return data_retriever.execute_find(
+            result = data_retriever.execute_find(
                 "PublishedFile",
                 filters=filters,
                 fields=fields,
                 order=order,
             )
+            self.logger.debug("Retrieved %d Published Files" % len(result))
+            return result
 
         # No data retriever, execute synchronously and return the published file data result.
-        return self.sgtk.shotgun.find(
+        result = self.sgtk.shotgun.find(
             "PublishedFile",
             filters=filters,
             fields=fields,
             order=order,
         )
+        self.logger.debug("Retrieved %d Published Files" % len(result))
+        return result
 
     def get_latest_published_file(self, item, data_retriever=None, **kwargs):
         """
-        Query ShotGrid to get the latest published file for the given item.
+        Query ShotGrid to get the latest Published file for the given item.
+
+        Get all the Published Files which have the same values for the fields defined in the
+        publish_history_group_by_fields setting. Then sort them by version number and
+        creation date and return the first one.
 
         :param item: :class`FileItem` object we want to get the latest published file for
-        :type item: :class`FileItem`
-        :param data_retreiver: If provided, the api request will be async. The default value
+        :param data_retriever: If provided, the api request will be async. The default value
             will execute the api request synchronously.
-        :type data_retriever: ShotgunDataRetriever
 
-        :return: If the request is async, then the request task id is returned, else the
+        :returns: If the request is async, then the request task id is returned, else the
             published file data result from the api request.
-        :rtype: str | dict
         """
 
-        filters = [
-            ["name", "is", item.sg_data["name"]],
-            ["published_file_type", "is", item.sg_data["published_file_type"]],
-        ]
-        # If we have a Task, use it for the match, otherwise match the
-        # Entity with an empty Task
-        if item.sg_data["task"]:
-            filters.append(["task", "is", item.sg_data["task"]])
-        else:
-            filters.extend([
-                ["entity", "is", item.sg_data["entity"]],
-                ["task", "is", None]
-            ])
+        group_by_fields = self.parent.get_setting("publish_history_group_by_fields")
+        filters = []
+        for field in group_by_fields:
+            filters.append([field, "is", item.sg_data[field]])
         fields = list(item.sg_data.keys()) + ["version_number", "path"]
         # Highest version first or latest one
         order = [
@@ -199,5 +172,5 @@ class GetPublishedFiles(HookBaseClass):
                 fields=fields,
                 order=order,
             )
-
+        self.logger.debug("Found latest Published File %s" % result)
         return result
