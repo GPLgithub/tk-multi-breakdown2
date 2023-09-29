@@ -44,13 +44,13 @@ configuration:
     publish_history_group_by_fields:
         type: list
         description: The Published File fields to use when looking for the publish history. They are
-                     used to match the current Published File data against other Published Files. By default,
-                     the app will look for Published Files with the same project, task, entity, name and
-                     published file type.
+                     used to match the current Published File data against other Published Files.
         values:
             type: str
         allows_empty: False
         default_value:
+          # By default, the app will look for Published Files with the same project, task, entity, name and
+          # published file type.
           [ "project", "task", "entity", "name", "published_file_type" ]
 
     published_file_fields:

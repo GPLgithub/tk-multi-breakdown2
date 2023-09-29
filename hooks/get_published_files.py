@@ -115,7 +115,6 @@ class GetPublishedFiles(HookBaseClass):
                 fields=fields,
                 order=order,
             )
-            self.logger.debug("Retrieved %d Published Files" % len(result))
             return result
 
         # No data retriever, execute synchronously and return the published file data result.
@@ -172,5 +171,5 @@ class GetPublishedFiles(HookBaseClass):
                 fields=fields,
                 order=order,
             )
-        self.logger.debug("Found latest Published File %s" % result)
+            self.logger.debug("Found latest Published File %s" % result)
         return result
