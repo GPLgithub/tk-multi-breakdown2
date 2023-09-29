@@ -191,7 +191,7 @@ class FileHistoryModel(ShotgunModel, ViewItemRolesMixin):
         fields += get_ui_published_file_fields(app)
         # When we filter out which other publishes are associated with this one,
         # to effectively get the "version history", we look for items
-        # based on the publish_file_matching_fields setting.
+        # based on the publish_history_group_by_fields setting.
         group_by_fields = app.get_setting("publish_history_group_by_fields", [])
         filters = []
         for field in group_by_fields:
