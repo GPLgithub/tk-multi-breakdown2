@@ -12,6 +12,7 @@ from .framework_qtwidgets import utils
 
 import sgtk
 
+
 def get_ui_published_file_fields(app):
     """
     Returns a list of ShotGrid fields we want to retrieve when querying ShotGrid. We're going through each widget
