@@ -10,6 +10,7 @@
 
 from .framework_qtwidgets import utils
 
+import sgtk
 
 def get_ui_published_file_fields(app):
     """
@@ -30,6 +31,9 @@ def get_ui_published_file_fields(app):
     fields += utils.resolve_sg_fields(file_item_config.get("body"))
     if file_item_config["thumbnail"]:
         fields.append("image")
+        # We need the linked Version's image if setting
+        # use_version_thumbnail_as_fallback is enabled.
+        fields.append("version.Version.image")
 
     main_file_history_config = app.execute_hook_method(
         "hook_ui_config", "main_file_history_details"
@@ -37,8 +41,13 @@ def get_ui_published_file_fields(app):
 
     fields += utils.resolve_sg_fields(main_file_history_config.get("header"))
     fields += utils.resolve_sg_fields(main_file_history_config.get("body"))
-    if main_file_history_config["thumbnail"] and "image" not in fields:
-        fields.append("image")
+    if main_file_history_config["thumbnail"]:
+        if "image" not in fields:
+            fields.append("image")
+        # We need the linked Version's image if setting
+        # use_version_thumbnail_as_fallback is enabled.
+        if "version.Version.image" not in fields:
+            fields.append("version.Version.image")
 
     file_history_config = app.execute_hook_method(
         "hook_ui_config", "file_history_details"
@@ -47,7 +56,42 @@ def get_ui_published_file_fields(app):
     fields += utils.resolve_sg_fields(file_history_config.get("top_left"))
     fields += utils.resolve_sg_fields(file_history_config.get("top_right"))
     fields += utils.resolve_sg_fields(file_history_config.get("body"))
-    if file_history_config["thumbnail"] and "image" not in fields:
-        fields.append("image")
+    if file_history_config["thumbnail"]:
+        if "image" not in fields:
+            fields.append("image")
+        # We need the linked Version's image if setting
+        # use_version_thumbnail_as_fallback is enabled.
+        if "version.Version.image" not in fields:
+            fields.append("version.Version.image")
 
     return list(set(fields))
+
+
+def get_item_image_field(item):
+    """
+    Get the field to use for the thumbnail for the given item.
+
+    It returns "image" if the item has an image field and there's an
+    actual image to use. If there's no image field or no image to use,
+    it tries to use the version.Version.image field in the same way,
+    if setting use_version_thumbnail_as_fallback is enabled.
+
+    If there's no image field or no image to use, it returns None.
+
+    :param item: The QStandardItem to get the thumbnail field for.
+    :returns: A SG field, e.g. "image", or ``None``.
+    """
+    sg_data = item.sg_data
+    app = sgtk.platform.current_bundle()
+    if not sg_data:
+        return None
+    use_version_thumbnail_as_fallback = app.get_setting("use_version_thumbnail_as_fallback")
+    # When it's an empty thumbnail, it's an AWS link with a "no_preview_t.jpg" image.
+    if sg_data.get("image") and "no_preview_t.jpg" not in sg_data.get("image"):
+        return "image"
+    elif (
+            use_version_thumbnail_as_fallback and sg_data.get("version.Version.image")
+            and "no_preview_t.jpg" not in sg_data.get("version.Version.image")
+    ):
+        return "version.Version.image"
+    return None
