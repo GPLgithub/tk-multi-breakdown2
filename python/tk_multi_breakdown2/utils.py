@@ -10,8 +10,6 @@
 
 from .framework_qtwidgets import utils
 
-import sgtk
-
 
 def get_ui_published_file_fields(app):
     """
