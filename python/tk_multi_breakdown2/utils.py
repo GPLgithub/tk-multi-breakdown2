@@ -74,7 +74,7 @@ def get_item_image_field(item):
 
     It returns "image" if the item has an image field and there's an
     actual image to use. If there's no image field or no image to use,
-    it tries to use the version.Version.image field in the same way,
+    it tries to use the `version.Version.image` field in the same way,
     if setting use_version_thumbnail_as_fallback is enabled.
 
     If there's no image field or no image to use, it returns None.
