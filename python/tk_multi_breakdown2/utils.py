@@ -56,8 +56,7 @@ def get_ui_published_file_fields(app):
     if file_history_config["thumbnail"]:
         if "image" not in fields:
             fields.append("image")
-        # We need the linked Version's image if setting
-        # use_version_thumbnail_as_fallback is enabled.
+        # Add the linked Version's image field to be able to fallback on it if needed.
         if "version.Version.image" not in fields:
             fields.append("version.Version.image")
 
