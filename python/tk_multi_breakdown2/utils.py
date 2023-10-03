@@ -32,8 +32,7 @@ def get_ui_published_file_fields(app):
     fields += utils.resolve_sg_fields(file_item_config.get("body"))
     if file_item_config["thumbnail"]:
         fields.append("image")
-        # We need the linked Version's image if setting
-        # use_version_thumbnail_as_fallback is enabled.
+        # Add the linked Version's image field to be able to fall back on it if needed.
         fields.append("version.Version.image")
 
     main_file_history_config = app.execute_hook_method(
@@ -45,8 +44,7 @@ def get_ui_published_file_fields(app):
     if main_file_history_config["thumbnail"]:
         if "image" not in fields:
             fields.append("image")
-        # We need the linked Version's image if setting
-        # use_version_thumbnail_as_fallback is enabled.
+        # Add the linked Version's image field to be able to fall back on it if needed.
         if "version.Version.image" not in fields:
             fields.append("version.Version.image")
 
@@ -68,25 +66,25 @@ def get_ui_published_file_fields(app):
     return list(set(fields))
 
 
-def get_item_image_field(item):
+def get_thumbnail_field_for_item(item, use_version_thumbnail_as_fallback=True):
     """
     Get the field to use for the thumbnail for the given item.
 
-    It returns "image" if the item has an image field and there's an
-    actual image to use. If there's no image field or no image to use,
-    it tries to use the `version.Version.image` field in the same way,
-    if setting use_version_thumbnail_as_fallback is enabled.
+    Check if a thumbnail is available for the given item, and return
+    the field name to download it from. If not available and falling back
+    on the Version is allowed, check if one is available for it and,
+    if so, return the dotted field to use to retrieve it.
 
     If there's no image field or no image to use, it returns None.
 
     :param item: The QStandardItem to get the thumbnail field for.
+    :param use_version_thumbnail_as_fallback: Whether to use the Version's
+        thumbnail as a fallback if the item doesn't have one.
     :returns: A SG field, e.g. "image", or ``None``.
     """
     sg_data = item.sg_data
-    app = sgtk.platform.current_bundle()
     if not sg_data:
         return None
-    use_version_thumbnail_as_fallback = app.get_setting("use_version_thumbnail_as_fallback")
     # When it's an empty thumbnail, it's an AWS link with a "no_preview_t.jpg" image.
     if sg_data.get("image") and "no_preview_t.jpg" not in sg_data.get("image"):
         return "image"

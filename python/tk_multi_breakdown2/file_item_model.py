@@ -15,7 +15,7 @@ from sgtk.platform.qt import QtGui, QtCore
 from tank_vendor import six
 
 from .ui import resources_rc  # noqa F401 Required for accessing icons
-from .utils import get_ui_published_file_fields, get_item_image_field
+from .utils import get_ui_published_file_fields, get_thumbnail_field_for_item
 from .decorators import wait_cursor
 
 shotgun_data = sgtk.platform.import_framework(
@@ -145,6 +145,10 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
         # Flag indicating if the model will poll for published file updates async.
         self.__polling = polling
 
+        # Get the app setting to use the Version thumbnail as fallback.
+        self._use_version_thumbnail_as_fallback = self._app.get_setting(
+            "use_version_thumbnail_as_fallback"
+        )
         # Get the app setting for the timeout interval length for polling file item statuses.
         self._timeout_interval = self._app.get_setting("file_status_check_interval")
         # Create a timer that checks the latest published file every X seconds
@@ -1355,7 +1359,7 @@ class FileTreeItemModel(QtCore.QAbstractItemModel, ViewItemRolesMixin):
 
         :return: None
         """
-        image_field = get_item_image_field(file_item)
+        image_field = get_thumbnail_field_for_item(file_item, self._use_version_thumbnail_as_fallback)
         if not image_field:
             return
         request_id = self._sg_data_retriever.request_thumbnail(
