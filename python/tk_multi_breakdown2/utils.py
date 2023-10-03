@@ -30,6 +30,8 @@ def get_ui_published_file_fields(app):
     fields += utils.resolve_sg_fields(file_item_config.get("body"))
     if file_item_config["thumbnail"]:
         fields.append("image")
+        # Add the linked Version's image field to be able to fall back on it if needed.
+        fields.append("version.Version.image")
 
     main_file_history_config = app.execute_hook_method(
         "hook_ui_config", "main_file_history_details"
@@ -37,8 +39,12 @@ def get_ui_published_file_fields(app):
 
     fields += utils.resolve_sg_fields(main_file_history_config.get("header"))
     fields += utils.resolve_sg_fields(main_file_history_config.get("body"))
-    if main_file_history_config["thumbnail"] and "image" not in fields:
-        fields.append("image")
+    if main_file_history_config["thumbnail"]:
+        if "image" not in fields:
+            fields.append("image")
+        # Add the linked Version's image field to be able to fall back on it if needed.
+        if "version.Version.image" not in fields:
+            fields.append("version.Version.image")
 
     file_history_config = app.execute_hook_method(
         "hook_ui_config", "file_history_details"
@@ -47,7 +53,41 @@ def get_ui_published_file_fields(app):
     fields += utils.resolve_sg_fields(file_history_config.get("top_left"))
     fields += utils.resolve_sg_fields(file_history_config.get("top_right"))
     fields += utils.resolve_sg_fields(file_history_config.get("body"))
-    if file_history_config["thumbnail"] and "image" not in fields:
-        fields.append("image")
+    if file_history_config["thumbnail"]:
+        if "image" not in fields:
+            fields.append("image")
+        # Add the linked Version's image field to be able to fallback on it if needed.
+        if "version.Version.image" not in fields:
+            fields.append("version.Version.image")
 
     return list(set(fields))
+
+
+def get_thumbnail_field_for_item(item, use_version_thumbnail_as_fallback=True):
+    """
+    Get the field to use for the thumbnail for the given item.
+
+    Check if a thumbnail is available for the given item, and return
+    the field name to download it from. If not available and falling back
+    on the Version is allowed, check if one is available for it and,
+    if so, return the dotted field to use to retrieve it.
+
+    If there's no image field or no image to use, it returns None.
+
+    :param item: The QStandardItem to get the thumbnail field for.
+    :param use_version_thumbnail_as_fallback: Whether to use the Version's
+        thumbnail as a fallback if the item doesn't have one.
+    :returns: A SG field, e.g. "image", or ``None``.
+    """
+    sg_data = item.sg_data
+    if not sg_data:
+        return None
+    # When it's an empty thumbnail, it's an AWS link with a "no_preview_t.jpg" image.
+    if sg_data.get("image") and "no_preview_t.jpg" not in sg_data.get("image"):
+        return "image"
+    elif (
+            use_version_thumbnail_as_fallback and sg_data.get("version.Version.image")
+            and "no_preview_t.jpg" not in sg_data.get("version.Version.image")
+    ):
+        return "version.Version.image"
+    return None

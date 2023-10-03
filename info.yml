@@ -88,6 +88,13 @@ configuration:
                      timeout. The default interval length is 30 seconds. Set a negative valeu to not
                      perform the background file item status checks.
 
+    use_version_thumbnail_as_fallback:
+        type: bool
+        default_value: True
+        description: If set to True, when a published file lacks a thumbnail, the app will attempt to use
+                     the thumbnail from the linked Version, if available.
+                     Set to False to disable this fallback behavior.
+
 
 # The ShotGrid fields that this app needs in order to operate correctly
 requires_shotgun_fields:
