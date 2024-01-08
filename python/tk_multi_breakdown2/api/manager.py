@@ -141,6 +141,17 @@ class BreakdownManager(object):
             "published_file_fields", []
         )
 
+    def get_published_file_filters(self):
+        """
+        Get additional filters to pass to the query to retrieve the published files when
+        scanning the scene.
+
+        :return: The published file filters.
+        :rtype: List[List[dict]]
+        """
+
+        return self._bundle.get_setting("published_file_filters", [])
+
     def get_latest_published_file(self, item, data_retriever=None):
         """
         Get the latest available published file according to the current item context.
