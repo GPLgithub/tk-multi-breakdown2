@@ -19,7 +19,7 @@ class GetPublishedFiles(HookBaseClass):
     Hook called to retrieve the Published Files for the items in the scene.
     """
 
-    def get_published_files_for_items_data(self, items_data, fields):
+    def get_published_files_for_items_data(self, items_data, fields, filters=None):
         """
         Return the Published Files for the given items data.
 
@@ -42,13 +42,14 @@ class GetPublishedFiles(HookBaseClass):
 
         :param items_data: A list of dictionaries as returned by the scene scanner.
         :param fields: A list of fields to query from SG.
+        :param filters: A list of filters to use when querying SG.
         :returns: A list of items data for which a Published File was found.
         """
         if not items_data:
             return []
         file_paths = [o["path"] for o in items_data]
         publishes = sgtk.util.find_publish(
-            self.sgtk, file_paths, fields=fields, only_current_project=False
+            self.sgtk, file_paths, fields=fields, filters=filters, only_current_project=False
         )
         published_items_data = []
         for item_data in items_data:

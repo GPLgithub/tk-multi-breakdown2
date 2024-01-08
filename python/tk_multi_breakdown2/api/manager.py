@@ -76,8 +76,9 @@ class BreakdownManager(object):
         :return: The Published Files data.
         :rtype: dict
         """
-        # Get the published file fields to pass to the query
+        # Get the published file fields and filters to pass to the query
         fields = self.get_published_file_fields()
+        filters = self.get_published_file_filters()
         if extra_fields is not None:
             fields += extra_fields
 
@@ -86,6 +87,7 @@ class BreakdownManager(object):
             "get_published_files_for_items_data",
             items_data=items_data,
             fields=fields,
+            filters=filters,
         )
 
     def get_file_items(self, scene_objects):
