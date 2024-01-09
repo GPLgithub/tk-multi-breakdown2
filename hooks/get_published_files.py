@@ -9,6 +9,7 @@
 # not expressly granted therein are reserved by Autodesk, Inc.
 
 from collections import defaultdict
+import copy
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -94,7 +95,10 @@ class GetPublishedFiles(HookBaseClass):
                     # If there's no data for this field, we still need to make sure
                     # there's an empty list for it to build the filters.
                     sg_data_by_field[field] = []
-        filters = filters or []
+
+        # Let's copy the filters so we don't modify the original list.
+        filters = copy.deepcopy(filters) if filters else []
+
         for field, values in sg_data_by_field.items():
             if values:
                 filters.append([field, "in", values])
