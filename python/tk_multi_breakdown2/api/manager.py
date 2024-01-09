@@ -211,6 +211,7 @@ class BreakdownManager(object):
             "get_published_files_for_items",
             items=items,
             data_retriever=data_retriever,
+            filters=self.get_published_file_filters()
         )
 
     def get_published_file_history(self, item, extra_fields=None):

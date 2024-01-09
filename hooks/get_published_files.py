@@ -58,7 +58,7 @@ class GetPublishedFiles(HookBaseClass):
                 published_items_data.append(item_data)
         return published_items_data
 
-    def get_published_files_for_items(self, items, data_retriever=None):
+    def get_published_files_for_items(self, items, data_retriever=None, filters=None):
         """
         Make an API request to get all published files for the given file items.
 
@@ -72,6 +72,7 @@ class GetPublishedFiles(HookBaseClass):
         :param items: a list of :class`FileItem` we want to get published files for.
         :param data_retriever: If provided, the api request will be async. The default value
             will execute the api request synchronously.
+        :param filters: A list of filters to use when querying SG.
 
         :returns: If the request is async, then the request task id is returned, else the
             published file data result from the api request.
@@ -93,7 +94,7 @@ class GetPublishedFiles(HookBaseClass):
                     # If there's no data for this field, we still need to make sure
                     # there's an empty list for it to build the filters.
                     sg_data_by_field[field] = []
-        filters = []
+        filters = filters or []
         for field, values in sg_data_by_field.items():
             if values:
                 filters.append([field, "in", values])
