@@ -43,7 +43,7 @@ class GetPublishedFiles(HookBaseClass):
 
         :param items_data: A list of dictionaries as returned by the scene scanner.
         :param fields: A list of fields to query from SG.
-        :param filters: A list of filters to use when querying SG.
+        :param filters: An optional list of filters to use when querying SG.
         :returns: A list of items data for which a Published File was found.
         """
         if not items_data:
