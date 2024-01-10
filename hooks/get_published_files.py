@@ -73,7 +73,7 @@ class GetPublishedFiles(HookBaseClass):
         :param items: a list of :class`FileItem` we want to get published files for.
         :param data_retriever: If provided, the api request will be async. The default value
             will execute the api request synchronously.
-        :param filters: A list of filters to use when querying SG.
+        :param filters: An optional list of filters to use when querying SG.
 
         :returns: If the request is async, then the request task id is returned, else the
             published file data result from the api request.
