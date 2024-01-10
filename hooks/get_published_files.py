@@ -9,6 +9,7 @@
 # not expressly granted therein are reserved by Autodesk, Inc.
 
 from collections import defaultdict
+import copy
 import sgtk
 
 HookBaseClass = sgtk.get_hook_baseclass()
@@ -19,7 +20,7 @@ class GetPublishedFiles(HookBaseClass):
     Hook called to retrieve the Published Files for the items in the scene.
     """
 
-    def get_published_files_for_items_data(self, items_data, fields):
+    def get_published_files_for_items_data(self, items_data, fields, filters=None):
         """
         Return the Published Files for the given items data.
 
@@ -42,13 +43,14 @@ class GetPublishedFiles(HookBaseClass):
 
         :param items_data: A list of dictionaries as returned by the scene scanner.
         :param fields: A list of fields to query from SG.
+        :param filters: An optional list of filters to use when querying SG.
         :returns: A list of items data for which a Published File was found.
         """
         if not items_data:
             return []
         file_paths = [o["path"] for o in items_data]
         publishes = sgtk.util.find_publish(
-            self.sgtk, file_paths, fields=fields, only_current_project=False
+            self.sgtk, file_paths, fields=fields, filters=filters, only_current_project=False
         )
         published_items_data = []
         for item_data in items_data:
@@ -57,7 +59,7 @@ class GetPublishedFiles(HookBaseClass):
                 published_items_data.append(item_data)
         return published_items_data
 
-    def get_published_files_for_items(self, items, data_retriever=None):
+    def get_published_files_for_items(self, items, data_retriever=None, filters=None):
         """
         Make an API request to get all published files for the given file items.
 
@@ -71,6 +73,7 @@ class GetPublishedFiles(HookBaseClass):
         :param items: a list of :class`FileItem` we want to get published files for.
         :param data_retriever: If provided, the api request will be async. The default value
             will execute the api request synchronously.
+        :param filters: An optional list of filters to use when querying SG.
 
         :returns: If the request is async, then the request task id is returned, else the
             published file data result from the api request.
@@ -92,7 +95,10 @@ class GetPublishedFiles(HookBaseClass):
                     # If there's no data for this field, we still need to make sure
                     # there's an empty list for it to build the filters.
                     sg_data_by_field[field] = []
-        filters = []
+
+        # Let's copy the filters so we don't modify the original list.
+        filters = copy.deepcopy(filters) if filters else []
+
         for field, values in sg_data_by_field.items():
             if values:
                 filters.append([field, "in", values])

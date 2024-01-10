@@ -76,8 +76,9 @@ class BreakdownManager(object):
         :return: The Published Files data.
         :rtype: dict
         """
-        # Get the published file fields to pass to the query
+        # Get the published file fields and filters to pass to the query
         fields = self.get_published_file_fields()
+        filters = self.get_published_file_filters()
         if extra_fields is not None:
             fields += extra_fields
 
@@ -86,6 +87,7 @@ class BreakdownManager(object):
             "get_published_files_for_items_data",
             items_data=items_data,
             fields=fields,
+            filters=filters,
         )
 
     def get_file_items(self, scene_objects):
@@ -140,6 +142,17 @@ class BreakdownManager(object):
         return constants.PUBLISHED_FILES_FIELDS + self._bundle.get_setting(
             "published_file_fields", []
         )
+
+    def get_published_file_filters(self):
+        """
+        Get additional filters to pass to the query to retrieve the published files when
+        scanning the scene.
+
+        :return: The published file filters.
+        :rtype: List[List[dict]]
+        """
+
+        return self._bundle.get_setting("published_file_filters", [])
 
     def get_latest_published_file(self, item, data_retriever=None):
         """
@@ -198,6 +211,7 @@ class BreakdownManager(object):
             "get_published_files_for_items",
             items=items,
             data_retriever=data_retriever,
+            filters=self.get_published_file_filters()
         )
 
     def get_published_file_history(self, item, extra_fields=None):
